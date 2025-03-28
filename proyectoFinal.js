@@ -551,20 +551,20 @@ async function mysqlImportSnapshot() {
 
     const dropMysql = new Process("mysql"); 
     dropMysql.ProcessArguments.push(`-u${config.mysql.user}`);
-    dropMysql.ProcessArguments.push(`--password=${config.mysql.password}`);
+    dropMysql.ProcessArguments.push(`-p${config.mysql.password}`);
     dropMysql.Execute();
     dropMysql.Write(`DROP DATABASE IF EXISTS ${config.mysql.database};\n`);
     dropMysql.Write(`CREATE DATABASE ${config.mysql.database};\n`);
     dropMysql.End();
     await dropMysql.Finish();
     
-    const mysqlImport = new Process("mysql");
+    const mysqlImport = new Process("mysql", { shell: true });
     mysqlImport.ProcessArguments.push(`-u${config.mysql.user}`);
-    mysqlImport.ProcessArguments.push(`--password=${config.mysql.password}`);
+    mysqlImport.ProcessArguments.push(`-p${config.mysql.password}`);
     mysqlImport.ProcessArguments.push(`${config.mysql.database}`); 
 
-    mysqlImport.ProcessArguments.push("--execute");
-    mysqlImport.ProcessArguments.push(`source C:/backups/snapshot_library.sql`);
+    mysqlImport.ProcessArguments.push("<");
+    mysqlImport.ProcessArguments.push(`C:/backups/snapshot_library.sql`);
 
     await mysqlImport.ExecuteAsync(true); 
 
@@ -601,30 +601,6 @@ async function userInsertFail() {
     metrics.fail_insert_book = Date.now() - startFailBook;
 }
 
-async function insertSampleBook() {
-    const command = `
-        db.libros.insertOne({
-            ISBN: "123-45-67890-1",
-            title: "Test Book Title",
-            autor_license: "AUTH-001",
-            editorial: "Test Editorial",
-            pages: 300,
-            year: 2023,
-            genre: "Fiction",
-            language: "Spanish",
-            format: "Hardcover",
-            sinopsis: "This is a test book for connection verification.",
-            content: "Test content for verifying connection to MongoDB."
-        });
-    `;
-    try {
-        const result = await executeMongoCommand(command);
-        console.log("Sample book inserted successfully.");
-    } catch (err) {
-        console.error("Error inserting sample book:", err);
-    }
-}
-
 async function measureMongoDBOperations() {
     console.log('Generando e insertando 1,000,000 de libros en MongoDB...');
     const startMongoInsert = Date.now();
@@ -657,10 +633,10 @@ async function measureMongoDBOperations() {
     const startMongoExport = Date.now();
 
     await executeMySQLQuery(`
-        CREATE TABLE libreria.old_books (
+        CREATE TABLE IF NOT EXISTS libreria.old_books (
             ISBN VARCHAR(16) NOT NULL UNIQUE,
-            year SMALLINT NOT NULL,
-            pages SMALLINT,
+            \`year\` SMALLINT NOT NULL,
+            pages SMALLINT
         );
     `);
 
