@@ -113,6 +113,7 @@ async function setupMySQL() {
 
             mysql.Write(`CREATE USER 'usuario_c'@'localhost' IDENTIFIED BY 'password_c';`);
             mysql.Write(`GRANT SELECT ON libreria.* TO 'usuario_c'@'localhost';`);
+            mysql.Write(`FLUSH PRIVILEGES;`);
 
             metrics.mysql_setup = Date.now() - start;
 
@@ -166,7 +167,11 @@ async function executeMySQLQuery(query) {
             mysql.Write(`${query}\n`);
 
             mysql.End();
-            mysql.Finish();
+            mysql.Finish().then(()=>{
+                    resolve(true);
+            }).catch((arr)=>{
+                reject(new Error('Mysql'))
+            });
 
             resolve(true);
         } catch (err) {
@@ -186,8 +191,14 @@ async function executeMongoCommand(command) {
             mongo.Write(command);
 
             mongo.End();
-            mongo.Finish();
+            mongo.Finish().then(()=>{
+                resolve(true);
+            }).catch((arr)=>{
+                reject(new Error('Mongo'))
+            });
+
             resolve(true);
+
         } catch (err) {
             console.error('Mongo process error:', err);
             reject(err);
@@ -513,7 +524,8 @@ async function measureFullMigration() {
         INTO TABLE Autor 
         FIELDS TERMINATED BY ','    
         ENCLOSED BY '"'           
-        LINES TERMINATED BY '\n'   
+        LINES TERMINATED BY '\n'  
+        IGNORE 1 ROWS 
         (mysql_id, license, name, lastName, secondLastName, year);
     `);
     
@@ -523,16 +535,17 @@ async function measureFullMigration() {
         FIELDS TERMINATED BY ','    
         ENCLOSED BY '"'           
         LINES TERMINATED BY '\n'
+        IGNORE 1 ROWS 
         (ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content);
     `);
-
     metrics.restore_mysql_from_mongo = Date.now() - startFullMigration;
-    
+    await sleep(10000);
+
 }
 
 async function mysqlSnapshot() {
     const startTime = Date.now();
-    const mysqldump = new Process("mysqldump");
+    const mysqldump = new Process("mysqldump",{shell : true});
     mysqldump.ProcessArguments.push(`-u${config.mysql.user}`);
     mysqldump.ProcessArguments.push(`-p${config.mysql.password}`);
     mysqldump.ProcessArguments.push(`${config.mysql.database}`);
@@ -575,30 +588,39 @@ async function mysqlImportSnapshot() {
 async function userInsertFail() {
     
     console.log('Probando fallo al insertar autor...');
-    const startFailAuthor = Date.now();
-    try {
-        await executeMySQLQuery(
-            'INSERT INTO Autor (license, name, lastName, secondLastName, year) VALUES ("TEST123", "Test Author","Test Last Name", "Test Second Last Name", 1999);',
+
+    return new Promise((resolve, reject) => {
+        const mysql = new Process('mysql', { shell: true });
+        mysql.ProcessArguments.push(`-uusuario_c`);
+        mysql.ProcessArguments.push(`--password=password_c`);
+        try {
+            const startFailAuthor = Date.now();
+            mysql.Execute();
+            mysql.Write(`DROP DATABASE IF EXISTS ${config.mysql.database};`);
+            mysql.Write(`CREATE DATABASE ${config.mysql.database};`);
+            mysql.Write('INSERT INTO Autor (license, name, lastName, secondLastName, year) VALUES ("TEST123", "Test Author","Test Last Name", "Test Second Last Name", 1999);',
+                'usuario_c',
+                'password_c')  
+            metrics.fail_insert_author = Date.now() - startFailAuthor;
+            
+            const startFailBook = Date.now();
+            mysql.Write('INSERT INTO Libro (ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content) VALUES ("123-45-67890-1", "Test Book", "TEST123", "AAAA", 1111, 1111, "AAA", "AAA", "AAA", "AAA", "AAA");',
             'usuario_c',
             'password_c'
-        );
-    } catch (e) {
+            )
+            metrics.fail_insert_book = Date.now() - startFailBook;
 
-    }
-    metrics.fail_insert_author = Date.now() - startFailAuthor;
-    
-    console.log('Probando fallo al insertar libro...');
-    const startFailBook = Date.now();
-    try {
-        await executeMySQLQuery(
-            'INSERT INTO Libro (ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content) VALUES ("123-45-67890-1", "Test Book", "TEST123", "AAAA", 1111, 1111, "AAA", "AAA", "AAA", "AAA", "AAA");',
-            'usuario_c',
-            'password_c'
-        );
-    } catch (e) {
 
-    }
-    metrics.fail_insert_book = Date.now() - startFailBook;
+            mysql.End();
+            mysql.Finish();``
+
+            resolve(true);
+        } catch (err) {
+            console.error('MySQL process error:', err);
+            reject(err);
+        }
+    });   
+
 }
 
 async function measureMongoDBOperations() {
@@ -607,7 +629,7 @@ async function measureMongoDBOperations() {
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     const batchSize = 1000;
-    const totalBatches = 11;
+    const totalBatches = 5;
     
     for (let i = 0; i < totalBatches; i++) {
         console.log(`Insertando lote ${i + 1} de ${totalBatches}...`);
@@ -635,18 +657,19 @@ async function measureMongoDBOperations() {
     await executeMySQLQuery(`
         CREATE TABLE IF NOT EXISTS libreria.old_books (
             ISBN VARCHAR(16) NOT NULL UNIQUE,
-            \`year\` SMALLINT NOT NULL,
-            pages SMALLINT
+            pages SMALLINT,
+            \`year\` SMALLINT NOT NULL
         );
     `);
 
     await executeMySQLQuery(`
-        LOAD DATA INFILE 'C:/backups/old_books.csv' 
+        LOAD DATA INFILE 'C:/backups/old_books_export.csv' 
         INTO TABLE old_books 
-        FIELDS TERMINATED BY '|' 
-        ENCLOSED BY '"' 
+        FIELDS TERMINATED BY ','    
+        ENCLOSED BY '"'           
         LINES TERMINATED BY '\n'
-        (ISBN, year, pages);
+        IGNORE 1 ROWS 
+        (ISBN, pages, year);
     `);
     
     metrics.mongo_export_MySql = Date.now() - startMongoExport;
