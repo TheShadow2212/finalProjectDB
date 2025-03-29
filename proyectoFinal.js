@@ -528,7 +528,8 @@ async function measureFullMigration() {
         IGNORE 1 ROWS 
         (id, license, name, lastName, secondLastName, year);
     `);
-    
+    await sleep(10000);
+
     await executeMySQLQuery(`
         LOAD DATA INFILE 'C:/backups/libros_mongo_export.csv' 
         INTO TABLE Libro 
@@ -538,7 +539,6 @@ async function measureFullMigration() {
         IGNORE 1 ROWS 
         (id, ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content);
     `);
-    console.log("Insertando libros 10m")
     metrics.restore_mysql_from_mongo = Date.now() - startFullMigration;
     await sleep(10000);
 
