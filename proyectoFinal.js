@@ -464,12 +464,12 @@ async function measureFullMigration() {
     await importCSVToMongoDB(
         "autores", 
         "C:/backups/autores_mysql_export.csv", 
-        ["mysql_id", "license", "name", "lastName", "secondLastName", "year"]
+        ["id", "license", "name", "lastName", "secondLastName", "year"]
     );
     await importCSVToMongoDB(
         "libros", 
         "C:/backups/libros_mysql_export.csv", 
-        ['mysql_id', 'ISBN', 'title', 'autor_license', 'editorial', 'pages', 'year', 'genre', 'language', 'format', 'sinopsis', 'content']
+        ['id', 'ISBN', 'title', 'autor_license', 'editorial', 'pages', 'year', 'genre', 'language', 'format', 'sinopsis', 'content']
     );
         
         
@@ -478,13 +478,13 @@ async function measureFullMigration() {
     await exportCSVToMongoDB(
         "autores", 
         "C:/backups/autores_mongo_export.csv", 
-        ["mysql_id", "license", "name", "lastName", "secondLastName", "year"]
+        ["id", "license", "name", "lastName", "secondLastName", "year"]
     );
 
     await exportCSVToMongoDB(
         "libros", 
         "C:/backups/libros_mongo_export.csv", 
-        ['mysql_id', 'ISBN', 'title', 'autor_license', 'editorial', 'pages', 'year', 'genre', 'language', 'format', 'sinopsis', 'content']
+        ['id', 'ISBN', 'title', 'autor_license', 'editorial', 'pages', 'year', 'genre', 'language', 'format', 'sinopsis', 'content']
     );
     
 
@@ -526,7 +526,7 @@ async function measureFullMigration() {
         ENCLOSED BY '"'           
         LINES TERMINATED BY '\n'  
         IGNORE 1 ROWS 
-        (mysql_id, license, name, lastName, secondLastName, year);
+        (id, license, name, lastName, secondLastName, year);
     `);
     
     await executeMySQLQuery(`
@@ -536,8 +536,9 @@ async function measureFullMigration() {
         ENCLOSED BY '"'           
         LINES TERMINATED BY '\n'
         IGNORE 1 ROWS 
-        (ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content);
+        (id, ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content);
     `);
+    console.log("Insertando libros 10m")
     metrics.restore_mysql_from_mongo = Date.now() - startFullMigration;
     await sleep(10000);
 

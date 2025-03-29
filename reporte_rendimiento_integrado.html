@@ -39,28 +39,28 @@
                 <th>Tiempo (ms)</th>
                 <th>Sistema</th>
             </tr>
-            <tr><td>Configuración inicial MySQL</td><td>11</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma crear 100,000 Libros en la Base de Datos usando datos aleatorios en CSV</td><td>619</td><td>MySQL</td></tr>
+            <tr><td>Configuración inicial MySQL</td><td>12</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma crear 100,000 Libros en la Base de Datos usando datos aleatorios en CSV</td><td>601</td><td>MySQL</td></tr>
             <tr><td>Insertar CSV de 100,000 libros</td><td>4</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma insertar masivamente, estresando la base de datos con 3,500 Libros</td><td>171</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma generar 100 archivos CSV, donde cada archivo incluye 1000 Libros</td><td>8374</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma insertar los 100 archivos a MySQL</td><td>1261</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma obtener en 1 solo query: El mayor número de paginas, menor número de páginas, el promedio de número de páginas, el año más cercano a la actualidad, el año más antigüo, y el número total de libros.</td><td>12</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma generar 150,000 Autores</td><td>328</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma exportar ambas tablas a CSV</td><td>48</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma insertar masivamente, estresando la base de datos con 3,500 Libros</td><td>161</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma generar 100 archivos CSV, donde cada archivo incluye 1000 Libros</td><td>8373</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma insertar los 100 archivos a MySQL</td><td>1252</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma obtener en 1 solo query: El mayor número de paginas, menor número de páginas, el promedio de número de páginas, el año más cercano a la actualidad, el año más antigüo, y el número total de libros.</td><td>45</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma generar 150,000 Autores</td><td>342</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma exportar ambas tablas a CSV</td><td>26</td><td>MySQL</td></tr>
 
-            <tr><td>El tiempo que toma respaldar ambas tablas a MongoDB, eliminarlas de MySQL, exportar el respaldo de MongoDB y restaurarlo en MySQL.</td><td>28543</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma respaldar ambas tablas a MongoDB, eliminarlas de MySQL, exportar el respaldo de MongoDB y restaurarlo en MySQL.</td><td>28319</td><td>MySQL</td></tr>
 
-            <tr><td>El tiempo que toma hacer el dump de toda la base de datos de MySQL ("Snapshot")</td><td>76</td><td>MySQL</td></tr>
-            <tr><td>El tiempo que toma importar de nuevo todo el "snapshot" de la base de datos</td><td>223</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma hacer el dump de toda la base de datos de MySQL ("Snapshot")</td><td>236</td><td>MySQL</td></tr>
+            <tr><td>El tiempo que toma importar de nuevo todo el "snapshot" de la base de datos</td><td>2548</td><td>MySQL</td></tr>
 
 
-            <tr><td>Usando un usuario diferente a 'A' y 'B', mida el tiempo que toma fallar cuando intenta insertar un Autor(usuario no autorizado)</td><td>6</td><td>MySQL</td></tr>
+            <tr><td>Usando un usuario diferente a 'A' y 'B', mida el tiempo que toma fallar cuando intenta insertar un Autor(usuario no autorizado)</td><td>7</td><td>MySQL</td></tr>
             <tr><td>Usando un usuario diferente a 'A' y 'B', mida el tiempo que toma fallar cuando intenta insertar un Libro</td><td>0</td><td>MySQL</td></tr>
 
-            <tr><td>Configuración inicial MongoDB</td><td>8</td><td>MongoDB</td></tr>
-            <tr><td>Por último, genere 1,000,000 de datos en MongoDB para libros, exporte solamente los campos: ISBN, year y pages a un CSV</td><td>51444</td><td>MongoDB</td></tr>
-            <tr><td>De este CSV, cree una tabla nueva llamada "old_books" en MySQL e importe los datos del CSV anterior</td><td>8</td><td>MongoDB</td></tr>
+            <tr><td>Configuración inicial MongoDB</td><td>7</td><td>MongoDB</td></tr>
+            <tr><td>Por último, genere 1,000,000 de datos en MongoDB para libros, exporte solamente los campos: ISBN, year y pages a un CSV</td><td>51493</td><td>MongoDB</td></tr>
+            <tr><td>De este CSV, cree una tabla nueva llamada "old_books" en MySQL e importe los datos del CSV anterior</td><td>7</td><td>MongoDB</td></tr>
 
         </table>
 
@@ -78,12 +78,12 @@
                     datasets: [{
                         label: 'MySQL - Tiempo (ms)',
                         data: [
-                            11, 619, 4, 
-                            171, 8374, 1261, 
-                            12, 328, 48, 
-                            76, 223, 
-                            28543,
-                            6, 0
+                            12, 601, 4, 
+                            161, 8373, 1252, 
+                            45, 342, 26, 
+                            236, 2548, 
+                            28319,
+                            7, 0
                         ],
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(54, 162, 235, 1)',
@@ -102,7 +102,7 @@
                     datasets: [{
                         label: 'MongoDB - Tiempo (ms)',
                         data: [
-                            8, 51444, 8
+                            7, 51493, 7
                         ],
                         backgroundColor: 'rgba(75, 192, 192, 0.5)',
                         borderColor: 'rgba(75, 192, 192, 1)',
