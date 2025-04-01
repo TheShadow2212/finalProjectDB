@@ -663,6 +663,8 @@ async function measureMongoDBOperations() {
         );
     `);
 
+    await sleep(10000);
+
     await executeMySQLQuery(`
         LOAD DATA INFILE 'C:/backups/old_books_export.csv' 
         INTO TABLE old_books 
