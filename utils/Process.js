@@ -18,7 +18,6 @@ class Process {
         this.finish = false;
     }
 
-    //getters
     get ProcessArguments() {
         return this.process_arguments;
     }
@@ -47,7 +46,6 @@ class Process {
         return this.end_time;
     }
 
-    //setters
     set ProcessArguments(value) {
         this.process_arguments = value;
     }
@@ -64,27 +62,7 @@ class Process {
             }
 
             this.process.stdout.on("data", (chunk) => {
-                this.outs += (chunk.toString());
-            });
-
-            this.process.stdout.on("error", (err) => {
-                const text = err.toString();
-                this.errors += text;
-                this.outs += text;
-            });
-
-            this.process.on('close', (code) => {
-                this.exit_code = code.toString();
-                this.outs += code.toString();
-                this.end_time = Date.now();
-                resolve(true);
-            });
-
-            this.process.on("error", (err) => {
-                const text = err.toString();
-                this.errors += text;
-                this.outs += text;
-                reject(err);
+                this.outs += chunk.toString();
             });
 
             this.process.stderr.on("data", (chunk) => {
@@ -93,10 +71,18 @@ class Process {
                 this.outs += text;
             });
 
-            this.process.stderr.on("error", (error) => {
-                const text = error.toString();
+            this.process.on('close', (code) => {
+                this.exit_code = code;
+                this.end_time = Date.now();
+                this.finish = true;
+                resolve(true);
+            });
+
+            this.process.on('error', (err) => {
+                const text = err.toString();
                 this.errors += text;
                 this.outs += text;
+                reject(err);
             });
         });
     }
@@ -108,26 +94,7 @@ class Process {
         }
 
         this.process.stdout.on("data", (chunk) => {
-            this.outs += (chunk.toString());
-        });
-
-        this.process.stdout.on("error", (err) => {
-            const text = err.toString();
-            this.errors += text;
-            this.outs += text;
-        });
-
-        this.process.on('close', (code) => {
-            this.exit_code = code.toString();
-            this.outs += code.toString();
-            this.end_time = Date.now();
-            this.finish = true;
-        });
-
-        this.process.on("error", (err) => {
-            const text = err.toString();
-            this.errors += text;
-            this.outs += text;
+            this.outs += chunk.toString();
         });
 
         this.process.stderr.on("data", (chunk) => {
@@ -136,8 +103,14 @@ class Process {
             this.outs += text;
         });
 
-        this.process.stderr.on("error", (error) => {
-            const text = error.toString();
+        this.process.on('close', (code) => {
+            this.exit_code = code;
+            this.end_time = Date.now();
+            this.finish = true;
+        });
+
+        this.process.on('error', (err) => {
+            const text = err.toString();
             this.errors += text;
             this.outs += text;
         });
@@ -147,7 +120,6 @@ class Process {
         if (this.start_time === null) {
             this.start_time = Date.now();
         }
-
         this.process.stdin.write(cmd);
     }
 
@@ -156,14 +128,15 @@ class Process {
     }
 
     async Finish() {
-        const self = this;
-        return new Promise((resolve, reject) => {
-            const loop = setInterval(() => {
-                if (self.finish === true) {
-                    clearInterval(loop);
+        return new Promise((resolve) => {
+            const check = () => {
+                if (this.finish) {
                     resolve(true);
+                } else {
+                    setTimeout(check, 100);
                 }
-            }, 100);
+            };
+            check();
         });
     }
 }

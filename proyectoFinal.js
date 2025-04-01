@@ -239,6 +239,8 @@ async function exportCSVToMongoDB(collectionName, filePath, fields) {
     mongoexport.ProcessArguments.push("csv");
     mongoexport.ProcessArguments.push("--fields");
     mongoexport.ProcessArguments.push(fields.join(","));
+    mongoexport.ProcessArguments.push("--noHeaderLine");
+
 
     try {
         await mongoexport.ExecuteAsync(true);
@@ -433,7 +435,6 @@ async function measureMySQLOperations() {
 
 async function measureFullMigration() {
     const startFullMigration = Date.now();
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     console.log('Respaldando tablas de MySQL...');
 
@@ -443,8 +444,7 @@ async function measureFullMigration() {
         FIELDS TERMINATED BY ',' 
         ENCLOSED BY '"' 
         LINES TERMINATED BY '\n'
-    `);
-    await sleep(10000);
+    `)
 
     await executeMySQLQuery(`
         SELECT * FROM Libro 
@@ -452,8 +452,7 @@ async function measureFullMigration() {
         FIELDS TERMINATED BY ',' 
         ENCLOSED BY '"' 
         LINES TERMINATED BY '\n'
-    `);
-    await sleep(10000);
+    `)
 
 
     console.log('Eliminando tablas de MySQL...');
@@ -527,8 +526,7 @@ async function measureFullMigration() {
         LINES TERMINATED BY '\n'  
         IGNORE 1 ROWS 
         (id, license, name, lastName, secondLastName, year);
-    `);
-    await sleep(10000);
+    `)
 
     await executeMySQLQuery(`
         LOAD DATA INFILE 'C:/backups/libros_mongo_export.csv' 
@@ -539,8 +537,7 @@ async function measureFullMigration() {
         IGNORE 1 ROWS 
         (id, ISBN, title, autor_license, editorial, pages, year, genre, language, format, sinopsis, content);
     `);
-    metrics.restore_mysql_from_mongo = Date.now() - startFullMigration;
-    await sleep(10000);
+    metrics.restore_mysql_from_mongo = Date.now() - startFullMigration
 
 }
 
@@ -627,24 +624,38 @@ async function userInsertFail() {
 async function measureMongoDBOperations() {
     console.log('Generando e insertando 1,000,000 de libros en MongoDB...');
     const startMongoInsert = Date.now();
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const batchSize = 1000;
-    const totalBatches = 5;
+    const batchSize = 1000000; 
+    const totalBatches = 1; 
+    const tempFilePath = 'C:/backups/1M_books_import.csv';
+    const fields = ['ISBN', 'title', 'autor_license', 'editorial', 'pages', 'year', 'genre', 'language', 'format', 'sinopsis', 'content'];
     
-    for (let i = 0; i < totalBatches; i++) {
-        console.log(`Insertando lote ${i + 1} de ${totalBatches}...`);
+    try {
+        await fs.promises.writeFile(tempFilePath, '');
+        
+        console.log(`Generando lote de 1,000,000 registros...`);
         const batchData = await generateBooksData(batchSize);
-        const documents = batchData.map(doc => JSON.stringify(doc).replace(/'/g, "\\'")).join(',');
-        await executeMongoCommand(`
-            db.libros.insertMany([${documents}]);
-        `, config.mongo.database);
-        await sleep(10000); 
-
+        
+        const csvLines = batchData.map(book => 
+            fields.map(field => 
+                `"${String(book[field] || '').replace(/"/g, '""')}"`
+            ).join(',')
+        ).join('\n');
+    
+        await fs.promises.appendFile(tempFilePath, csvLines);
+        
+        console.log(`Archivo CSV generado exitosamente en: ${tempFilePath}`);
+        console.log(`Total de registros: ${batchData.length}`);
+    } catch (error) {
+        console.error('Error durante la generación del archivo:', error);
+        throw error; 
     }
-    
-    
+
+    console.log('Datos generados. Importando a MongoDB...');
+    await importCSVToMongoDB('libros', tempFilePath, fields);
+
     console.log('Exportando datos específicos desde MongoDB a MySQL...');
+
     await exportCSVToMongoDB(
         "libros", 
         "C:/backups/old_books_export.csv", 
@@ -663,19 +674,18 @@ async function measureMongoDBOperations() {
         );
     `);
 
-    await sleep(10000);
-
     await executeMySQLQuery(`
         LOAD DATA INFILE 'C:/backups/old_books_export.csv' 
         INTO TABLE old_books 
         FIELDS TERMINATED BY ','    
         ENCLOSED BY '"'           
         LINES TERMINATED BY '\n'
-        IGNORE 1 ROWS 
         (ISBN, pages, year);
     `);
     
     metrics.mongo_export_MySql = Date.now() - startMongoExport;
+
+    
 }
 
 function generateReport() {
